@@ -198,62 +198,80 @@ with tab1:
                         st.session_state.selected_teams = []
                         st.rerun()
 
-# 결과 보기 탭
+
 with tab2:
     st.header("📊 실시간 투표 결과")
     
-    results = get_results()
-    votes = load_votes()
-    total_votes = len(votes)
-    total_vote_count = sum(results.values())
+    # 관리자 비밀번호 입력
+    result_password = st.text_input(
+        "🔐 관리자 비밀번호를 입력하세요",
+        type="password",
+        key="result_password"
+    )
     
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("투표 참여", f"{total_votes}명")
-    with col2:
-        st.metric("총 득표", f"{total_vote_count}표")
-    with col3:
-        st.metric("투표율", f"{(total_votes/40)*100:.0f}%")
-    
-    st.markdown("---")
-    
-    sorted_results = sorted(results.items(), key=lambda x: x[1], reverse=True)
-    
-    for rank, (team_id, count) in enumerate(sorted_results, 1):
-        team_info = next((t for t in teams_data if t['id'] == team_id), None)
+    if result_password == "admin1234":  # 사이드바와 같은 비밀번호
+        st.success("✅ 관리자 인증 완료")
+        st.markdown("---")
         
-        if team_info:
-            percentage = (count / total_vote_count * 100) if total_vote_count > 0 else 0
+        results = get_results()
+        votes = load_votes()
+        total_votes = len(votes)
+        total_vote_count = sum(results.values())
+        
+        # 통계
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("투표 참여", f"{total_votes}명")
+        with col2:
+            st.metric("총 득표", f"{total_vote_count}표")
+        with col3:
+            st.metric("투표율", f"{(total_votes/40)*100:.0f}%")
+        
+        st.markdown("---")
+        
+        sorted_results = sorted(results.items(), key=lambda x: x[1], reverse=True)
+        
+        for rank, (team_id, count) in enumerate(sorted_results, 1):
+            team_info = next((t for t in teams_data if t['id'] == team_id), None)
             
-            medal = ""
-            if rank == 1:
-                medal = "🥇"
-            elif rank == 2:
-                medal = "🥈"
-            elif rank == 3:
-                medal = "🥉"
-            
-            col1, col2 = st.columns([3, 1])
-            
-            with col1:
-                st.markdown(
-                    f"""
-                    <div style="padding: 15px; border-radius: 10px; background: white; border-left: 5px solid #667eea; margin-bottom: 10px;">
-                        <span style="font-size: 24px;">{medal}</span>
-                        <span style="font-size: 20px; font-weight: bold;"> {rank}위. {team_info['emoji']} {team_id}</span>
-                        <br>
-                        <span style="color: #666; font-size: 14px;">{team_info['name']}</span>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-            
-            with col2:
-                st.metric("득표", f"{count}표")
-            
-            st.progress(percentage / 100 if total_vote_count > 0 else 0)
-            st.caption(f"{percentage:.1f}%")
-            st.markdown("")
+            if team_info:
+                percentage = (count / total_vote_count * 100) if total_vote_count > 0 else 0
+                
+                medal = ""
+                if rank == 1:
+                    medal = "🥇"
+                elif rank == 2:
+                    medal = "🥈"
+                elif rank == 3:
+                    medal = "🥉"
+                
+                col1, col2 = st.columns([3, 1])
+                
+                with col1:
+                    st.markdown(
+                        f"""
+                        <div style="padding: 15px; border-radius: 10px; background: white; border-left: 5px solid #667eea; margin-bottom: 10px;">
+                            <span style="font-size: 24px;">{medal}</span>
+                            <span style="font-size: 20px; font-weight: bold;"> {rank}위. {team_info['emoji']} {team_id}</span>
+                            <br>
+                            <span style="color: #666; font-size: 14px;">{team_info['name']}</span>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                
+                with col2:
+                    st.metric("득표", f"{count}표")
+                
+                st.progress(percentage / 100 if total_vote_count > 0 else 0)
+                st.caption(f"{percentage:.1f}%")
+                st.markdown("")
+    
+    elif result_password:
+        st.error("❌ 비밀번호가 틀렸습니다!")
+    else:
+        st.info("💡 투표 결과는 관리자만 확인할 수 있습니다.")
+
 
 # 사이드바
 st.sidebar.title("⚙️ 관리자")
