@@ -13,23 +13,22 @@ st.set_page_config(
 # 데이터 파일
 VOTE_FILE = "votes.json"
 
-# 팀 정보 (실제 팀 정보로 수정하세요!)
+# 팀 정보
 teams_data = [
-    {"id": "1팀", "name": "학급 성적 관리", "desc": "성적 입력 및 통계 분석", "emoji": "📊"},
-    {"id": "2팀", "name": "급식 메뉴 추천기", "desc": "랜덤 메뉴 추천 및 투표", "emoji": "🍽️"},
-    {"id": "3팀", "name": "출석 체크 시스템", "desc": "지각 관리 및 출석률", "emoji": "✅"},
-    {"id": "4팀", "name": "용돈 관리 프로그램", "desc": "수입/지출 기록", "emoji": "💰"},
-    {"id": "5팀", "name": "To-do 관리", "desc": "할 일 우선순위 관리", "emoji": "📝"},
-    {"id": "6팀", "name": "숫자 맞추기 게임", "desc": "UP/DOWN 게임", "emoji": "🎮"},
-    {"id": "7팀", "name": "공부 시간 기록", "desc": "과목별 시간 추적", "emoji": "⏰"},
-    {"id": "8팀", "name": "시험 점수 계산기", "desc": "등급 자동 계산", "emoji": "📈"},
-    {"id": "9팀", "name": "MBTI 테스트", "desc": "성격 유형 분석", "emoji": "🧠"},
-    {"id": "10팀", "name": "텍스트 RPG", "desc": "선택형 게임", "emoji": "⚔️"},
+    {"id": "1팀", "name": "인계템", "desc": "사람별 연락주기 관리 시스템", "emoji": "📊"},
+    {"id": "2팀", "name": "소마고 상식 퀴즈", "desc": "소마고 상식퀴즈", "emoji": "🧠"},
+    {"id": "3팀", "name": "개인 지출 관리 프로그램", "desc": "지출관리", "emoji": "✅"},
+    {"id": "4팀", "name": "무비픽", "desc": "부마민국 영화추천", "emoji": "🎬"},
+    {"id": "5팀", "name": "미니게임", "desc": "3가지 미니게임", "emoji": "🎮"},
+    {"id": "6팀", "name": "Today Fortune", "desc": "오늘의 운세", "emoji": "🔮"},
+    {"id": "7팀", "name": "해주세요", "desc": "해주세요/도와줄게요", "emoji": "🙋🏻"},
+    {"id": "8팀", "name": "거북이의 여행", "desc": "도박 베팅은 몸에 안좋아요", "emoji": "🐢"},
+    {"id": "9팀", "name": "급식알리미", "desc": "급식메뉴검색", "emoji": "🍽️"},
+    {"id": "10팀", "name": "3분 MBTI", "desc": "성격 유형 분석", "emoji": "🧠"},
 ]
 
 # 함수들
 def load_votes():
-    """저장된 투표 불러오기"""
     if os.path.exists(VOTE_FILE):
         try:
             with open(VOTE_FILE, 'r', encoding='utf-8') as f:
@@ -38,31 +37,34 @@ def load_votes():
             return {}
     return {}
 
-def save_vote(voter, team):
-    """투표 저장하기"""
+def save_vote(voter, teams):
     votes = load_votes()
     votes[voter] = {
-        'team': team,
+        'teams': teams,
         'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
     with open(VOTE_FILE, 'w', encoding='utf-8') as f:
         json.dump(votes, f, ensure_ascii=False, indent=2)
 
 def get_results():
-    """투표 결과 집계"""
     votes = load_votes()
     results = {team['id']: 0 for team in teams_data}
     
     for vote_data in votes.values():
-        team = vote_data['team']
-        if team in results:
-            results[team] += 1
+        voted_teams = vote_data.get('teams', [])
+        for team in voted_teams:
+            if team in results:
+                results[team] += 1
     
     return results
 
+# 세션 상태 초기화
+if 'selected_teams' not in st.session_state:
+    st.session_state.selected_teams = []
+
 # 메인 UI
 st.title("🏆 2026 파이썬 미니 프로젝트 투표")
-st.markdown("### 가장 우수하다고 생각하는 프로젝트에 투표해주세요!")
+st.markdown("### 가장 우수하다고 생각하는 프로젝트 **2개**에 투표해주세요!")
 st.markdown("---")
 
 # 탭 생성
@@ -70,7 +72,6 @@ tab1, tab2 = st.tabs(["📝 투표하기", "📊 결과 보기"])
 
 # 투표하기 탭
 with tab1:
-    # 이름 입력
     voter_name = st.text_input(
         "👤 이름을 입력하세요",
         placeholder="홍길동",
@@ -80,26 +81,39 @@ with tab1:
     if voter_name:
         votes = load_votes()
         
-        # 이미 투표했는지 확인
         if voter_name in votes:
             st.warning(f"⚠️ {voter_name}님은 이미 투표하셨습니다!")
-            st.info(f"**투표한 팀**: {votes[voter_name]['team']}")
+            voted_teams = votes[voter_name].get('teams', [])
+            st.info(f"**투표한 팀**: {', '.join(voted_teams)}")
             st.caption(f"투표 시각: {votes[voter_name]['timestamp']}")
             
-            # 투표 수정 옵션
             if st.button("투표 수정하기 (재투표)"):
                 votes.pop(voter_name)
                 with open(VOTE_FILE, 'w', encoding='utf-8') as f:
                     json.dump(votes, f, ensure_ascii=False, indent=2)
+                st.session_state.selected_teams = []
                 st.success("투표가 취소되었습니다. 다시 투표해주세요!")
                 st.rerun()
         
         else:
             st.markdown("---")
-            st.subheader("투표할 팀을 선택하세요")
-            st.caption("💡 카드를 클릭하면 바로 투표가 완료됩니다!")
             
-            # 팀 카드 (2열 배치)
+            # 선택 현황 표시
+            selected_count = len(st.session_state.selected_teams)
+            
+            if selected_count == 0:
+                st.subheader("🥇 1번째 팀을 선택하세요")
+                st.caption("💡 카드를 클릭하면 선택됩니다!")
+            elif selected_count == 1:
+                st.subheader("🥈 2번째 팀을 선택하세요")
+                st.info(f"✅ 1번째 선택: **{st.session_state.selected_teams[0]}**")
+            else:
+                st.success("✅ 2개 팀 선택 완료!")
+                st.info(f"**선택한 팀**: {', '.join(st.session_state.selected_teams)}")
+            
+            st.markdown("---")
+            
+            # 팀 카드
             for i in range(0, len(teams_data), 2):
                 cols = st.columns(2)
                 
@@ -108,41 +122,81 @@ with tab1:
                         team = teams_data[i + j]
                         
                         with cols[j]:
-                            # 카드 디자인
-                            st.markdown(f"""
-                                <div style='
-                                    padding: 30px;
-                                    border-radius: 15px;
-                                    background: linear-gradient(135deg, #667eea22 0%, #764ba222 100%);
-                                    border: 2px solid #e0e0e0;
-                                    text-align: center;
-                                    margin-bottom: 20px;
-                                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                                '>
-                                    <div style='font-size: 64px; margin-bottom: 15px;'>{team['emoji']}</div>
-                                    <div style='font-size: 24px; font-weight: bold; color: #667eea; margin-bottom: 10px;'>
-                                        {team['id']}
-                                    </div>
-                                    <div style='font-size: 18px; font-weight: 600; color: #333; margin-bottom: 8px;'>
-                                        {team['name']}
-                                    </div>
-                                    <div style='font-size: 14px; color: #666;'>
-                                        {team['desc']}
-                                    </div>
-                                </div>
-                            """, unsafe_allow_html=True)
+                            is_selected = team['id'] in st.session_state.selected_teams
                             
-                            # 투표 버튼
-                            if st.button(
-                                f"✓ 이 팀에 투표",
-                                key=f"vote_{team['id']}",
-                                type="primary",
-                                use_container_width=True
-                            ):
-                                save_vote(voter_name, team['id'])
-                                st.success(f"✅ {voter_name}님, {team['id']}에 투표 완료!")
-                                st.balloons()
-                                st.rerun()
+                            # 컨테이너로 카드 만들기 (HTML 대신)
+                            if is_selected:
+                                # 선택된 카드
+                                st.markdown(
+                                    f"""
+                                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                                                padding: 30px; 
+                                                border-radius: 15px; 
+                                                border: 3px solid #667eea;
+                                                text-align: center;
+                                                margin-bottom: 15px;">
+                                        <div style="font-size: 64px; margin-bottom: 10px;">{team['emoji']}</div>
+                                        <div style="font-size: 24px; font-weight: bold; color: white; margin-bottom: 8px;">{team['id']} ✓</div>
+                                        <div style="font-size: 18px; font-weight: 600; color: white; margin-bottom: 5px;">{team['name']}</div>
+                                        <div style="font-size: 14px; color: rgba(255,255,255,0.9);">{team['desc']}</div>
+                                    </div>
+                                    """,
+                                    unsafe_allow_html=True
+                                )
+                            else:
+                                # 선택 안 된 카드
+                                st.markdown(
+                                    f"""
+                                    <div style="background: linear-gradient(135deg, rgba(102,126,234,0.13) 0%, rgba(118,75,162,0.13) 100%); 
+                                                padding: 30px; 
+                                                border-radius: 15px; 
+                                                border: 2px solid #e0e0e0;
+                                                text-align: center;
+                                                margin-bottom: 15px;">
+                                        <div style="font-size: 64px; margin-bottom: 10px;">{team['emoji']}</div>
+                                        <div style="font-size: 24px; font-weight: bold; color: #667eea; margin-bottom: 8px;">{team['id']}</div>
+                                        <div style="font-size: 18px; font-weight: 600; color: #333; margin-bottom: 5px;">{team['name']}</div>
+                                        <div style="font-size: 14px; color: #666;">{team['desc']}</div>
+                                    </div>
+                                    """,
+                                    unsafe_allow_html=True
+                                )
+                            
+                            # 버튼
+                            if is_selected:
+                                if st.button(
+                                    f"✗ 선택 취소",
+                                    key=f"cancel_{team['id']}",
+                                    use_container_width=True
+                                ):
+                                    st.session_state.selected_teams.remove(team['id'])
+                                    st.rerun()
+                            else:
+                                button_disabled = len(st.session_state.selected_teams) >= 2
+                                
+                                if st.button(
+                                    f"✓ 선택",
+                                    key=f"select_{team['id']}",
+                                    type="primary" if not button_disabled else "secondary",
+                                    use_container_width=True,
+                                    disabled=button_disabled
+                                ):
+                                    if len(st.session_state.selected_teams) < 2:
+                                        st.session_state.selected_teams.append(team['id'])
+                                        st.rerun()
+            
+            # 투표 확정 버튼
+            if len(st.session_state.selected_teams) == 2:
+                st.markdown("---")
+                col1, col2, col3 = st.columns([1, 2, 1])
+                
+                with col2:
+                    if st.button("🗳️ 투표 확정", type="primary", use_container_width=True):
+                        save_vote(voter_name, st.session_state.selected_teams)
+                        st.success(f"✅ {voter_name}님, 투표 완료!")
+                        st.balloons()
+                        st.session_state.selected_teams = []
+                        st.rerun()
 
 # 결과 보기 탭
 with tab2:
@@ -151,30 +205,26 @@ with tab2:
     results = get_results()
     votes = load_votes()
     total_votes = len(votes)
+    total_vote_count = sum(results.values())
     
-    # 통계
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("총 투표 수", f"{total_votes}표")
+        st.metric("투표 참여", f"{total_votes}명")
     with col2:
-        st.metric("참여 팀", f"{len(teams_data)}팀")
+        st.metric("총 득표", f"{total_vote_count}표")
     with col3:
-        st.metric("투표율", f"{(total_votes/40)*100:.0f}%" if total_votes > 0 else "0%")
+        st.metric("투표율", f"{(total_votes/40)*100:.0f}%")
     
     st.markdown("---")
     
-    # 결과 정렬
     sorted_results = sorted(results.items(), key=lambda x: x[1], reverse=True)
     
-    # 순위 표시
     for rank, (team_id, count) in enumerate(sorted_results, 1):
-        # 팀 정보 찾기
         team_info = next((t for t in teams_data if t['id'] == team_id), None)
         
         if team_info:
-            percentage = (count / total_votes * 100) if total_votes > 0 else 0
+            percentage = (count / total_vote_count * 100) if total_vote_count > 0 else 0
             
-            # 메달
             medal = ""
             if rank == 1:
                 medal = "🥇"
@@ -183,57 +233,51 @@ with tab2:
             elif rank == 3:
                 medal = "🥉"
             
-            # 결과 카드
             col1, col2 = st.columns([3, 1])
             
             with col1:
-                st.markdown(f"""
-                    <div style='
-                        padding: 15px;
-                        border-radius: 10px;
-                        background: white;
-                        border-left: 5px solid #667eea;
-                        margin-bottom: 10px;
-                    '>
-                        <span style='font-size: 24px;'>{medal}</span>
-                        <span style='font-size: 20px; font-weight: bold;'> {rank}위. {team_info['emoji']} {team_id}</span>
+                st.markdown(
+                    f"""
+                    <div style="padding: 15px; border-radius: 10px; background: white; border-left: 5px solid #667eea; margin-bottom: 10px;">
+                        <span style="font-size: 24px;">{medal}</span>
+                        <span style="font-size: 20px; font-weight: bold;"> {rank}위. {team_info['emoji']} {team_id}</span>
                         <br>
-                        <span style='color: #666; font-size: 14px;'>{team_info['name']}</span>
+                        <span style="color: #666; font-size: 14px;">{team_info['name']}</span>
                     </div>
-                """, unsafe_allow_html=True)
+                    """,
+                    unsafe_allow_html=True
+                )
             
             with col2:
                 st.metric("득표", f"{count}표")
             
-            # 프로그레스 바
-            st.progress(percentage / 100 if total_votes > 0 else 0)
+            st.progress(percentage / 100 if total_vote_count > 0 else 0)
             st.caption(f"{percentage:.1f}%")
             st.markdown("")
 
-# 사이드바 - 관리자 기능
+# 사이드바
 st.sidebar.title("⚙️ 관리자")
 admin_password = st.sidebar.text_input("관리자 비밀번호", type="password")
 
-if admin_password == "admin1234":  # 비밀번호 변경하세요!
+if admin_password == "admin1234":
     st.sidebar.success("✅ 관리자 로그인")
     
     votes = load_votes()
-    st.sidebar.metric("현재 투표 수", len(votes))
+    st.sidebar.metric("현재 투표자", f"{len(votes)}명")
+    st.sidebar.metric("총 득표", f"{sum(get_results().values())}표")
     
-    # 초기화 버튼
     if st.sidebar.button("🔄 투표 전체 초기화", type="primary"):
         if os.path.exists(VOTE_FILE):
             os.remove(VOTE_FILE)
         st.sidebar.success("투표가 초기화되었습니다!")
         st.rerun()
     
-    # 투표자 목록
     if st.sidebar.checkbox("투표자 명단 보기"):
         st.sidebar.markdown("---")
         for voter, data in votes.items():
-            st.sidebar.text(f"{voter} → {data['team']}")
+            teams = data.get('teams', [])
+            st.sidebar.text(f"{voter} → {', '.join(teams)}")
     
-    # 데이터 다운로드
     if votes:
         st.sidebar.download_button(
             "📥 투표 데이터 다운로드",
