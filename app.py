@@ -65,6 +65,10 @@ if 'selected_teams' not in st.session_state:
 # 메인 UI
 st.title("🏆 2026 파이썬 미니 프로젝트 투표")
 st.markdown("### 가장 우수하다고 생각하는 프로젝트 **2개**에 투표해주세요!")
+
+st.info("📁 [발표자료&코드 구경하기](https://drive.google.com/drive/folders/1ucpnFPBHx-hsWHiVgS-QGQ46WY5F8Czo?usp=drive_link)")
+
+
 st.markdown("---")
 
 # 탭 생성
