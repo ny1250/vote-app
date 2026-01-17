@@ -213,7 +213,7 @@ with tab2:
         key="result_password"
     )
     
-    if result_password == "admin1234":  # 사이드바와 같은 비밀번호
+    if result_password == "admin":  # 사이드바와 같은 비밀번호
         st.success("✅ 관리자 인증 완료")
         st.markdown("---")
         
@@ -281,7 +281,7 @@ with tab2:
 st.sidebar.title("⚙️ 관리자")
 admin_password = st.sidebar.text_input("관리자 비밀번호", type="password")
 
-if admin_password == "admin1234":
+if admin_password == "admin":
     st.sidebar.success("✅ 관리자 로그인")
     
     votes = load_votes()
